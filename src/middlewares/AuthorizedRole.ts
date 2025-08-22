@@ -8,6 +8,7 @@ export const authorizeRole = (roles: string[]) => {
     if (!user) {
       return res.status(401).json({
         success: false,
+        errorType: "Unauthorized",
         message: "Unauthorized! No user data found.",
       });
     }
@@ -15,6 +16,7 @@ export const authorizeRole = (roles: string[]) => {
     if (!roles.includes(user.role)) {
       return res.status(403).json({
         success: false,
+        errorType: "authorizedRole",
         message: "Forbidden! You do not have permission.",
       });
     }
