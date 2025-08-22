@@ -200,8 +200,6 @@ export const refreshToken = async (req: Request, res: Response) => {
       });
     }
 
-    await TokenModel.deleteOne({ _id: tokenCheck?._id });
-
     const jti = newJti();
     const accessToken = signAccessToken(existUser);
     const refreshToken = signRefreshToken(existUser, jti);
@@ -212,20 +210,22 @@ export const refreshToken = async (req: Request, res: Response) => {
       7 * 24 * 3600 * 1000
     );
 
-    await TokenModel.create({
+    const storedToken = await TokenModel.create({
       userId: existUser._id,
       jti,
       tokenHash,
       tokenType: "refresh",
       expiresAt,
     });
-
-    setAuthCookies(res, accessToken, refreshToken);
-    res.status(200).json({
-      success: true,
-      message: "Token Refresh Successfully!",
-      accessToken: accessToken,
-    });
+    if (storedToken) {
+      await TokenModel.deleteOne({ _id: tokenCheck?._id });
+      setAuthCookies(res, accessToken, refreshToken);
+      res.status(200).json({
+        success: true,
+        message: "Token Refresh Successfully!",
+        accessToken: accessToken,
+      });
+    }
   } catch (error) {
     res.status(500).json({
       success: false,
