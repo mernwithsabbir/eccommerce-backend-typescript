@@ -5,6 +5,7 @@ import cors from "cors";
 import rateLimit from "express-rate-limit";
 import cookieParser from "cookie-parser";
 import apiRouter from "./routes/api";
+import { errorHandler, notFound } from "./middlewares/GlobalErrorHandler";
 const app = express();
 
 app.use(helmet());
@@ -19,4 +20,6 @@ app.set("etag", false);
 
 app.use(apiRouter);
 
+app.use(notFound);
+app.use(errorHandler);
 export default app;

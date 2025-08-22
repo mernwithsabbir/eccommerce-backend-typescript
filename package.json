@@ -32,6 +32,7 @@
     "typescript-eslint": "^8.40.0"
   },
   "dependencies": {
+    "@alwatr/parse-duration": "^5.5.4",
     "bcrypt": "^6.0.0",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
@@ -40,7 +41,10 @@
     "express-rate-limit": "^8.0.1",
     "helmet": "^8.1.0",
     "hpp": "^0.2.3",
+    "http-errors": "^2.0.0",
     "jsonwebtoken": "^9.0.2",
-    "mongoose": "^8.17.2"
+    "mongoose": "^8.17.2",
+    "uuid": "^11.1.0",
+    "zod": "^4.0.17"
   }
 }
