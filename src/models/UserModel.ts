@@ -9,6 +9,8 @@ export interface IUserInterface extends Document {
   firstName: string;
   lastName: string;
   password: string;
+  provider: "local" | "google" | "facebook";
+  providerId: string;
   otp: IOtpInterface;
 }
 const OtpSchema = new Schema<IOtpInterface>(
@@ -25,6 +27,12 @@ const UserSchema = new mongoose.Schema<IUserInterface>(
     firstName: { type: String, required: true },
     lastName: { type: String, required: true },
     password: { type: String, required: true },
+    provider: {
+      type: String,
+      enum: ["local", "google", "facebook"],
+      default: "local",
+    },
+    providerId: { type: String },
     otp: { type: OtpSchema, default: Object },
   },
   {
