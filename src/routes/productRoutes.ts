@@ -2,6 +2,7 @@ import express from "express";
 import { Authenticated } from "../middlewares/AuthMiddleware";
 import { authorizeRole } from "../middlewares/AuthorizedRole";
 import {
+  createBrand,
   createCategory,
   createProduct,
 } from "../controllers/ProductController";
@@ -12,6 +13,12 @@ productRouter.post(
   Authenticated,
   authorizeRole(["admin"]),
   createCategory
+);
+productRouter.post(
+  "/addBrand",
+  Authenticated,
+  authorizeRole(["admin"]),
+  createBrand
 );
 productRouter.post(
   "/addProduct",

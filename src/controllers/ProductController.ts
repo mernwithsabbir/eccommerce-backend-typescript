@@ -1,11 +1,17 @@
 import { Request, Response } from "express";
 import fs from "fs/promises";
-import { CategoryDto, categoryValidate } from "../dtos/category.dtos";
+import {
+  BrandDto,
+  brandValidate,
+  CategoryDto,
+  categoryValidate,
+} from "../dtos/product.dtos";
 import slug from "slug";
 import CategoryModel from "../models/CategoryModel";
 import multer from "multer";
 import { upload } from "../middlewares/uploadMiddleware";
 import path from "path";
+import BrandModel from "../models/BrandModel";
 export const createCategory = async (req: Request, res: Response) => {
   upload.single("categoryImage")(req, res, async function (err) {
     try {
@@ -71,6 +77,89 @@ export const createCategory = async (req: Request, res: Response) => {
       return res.status(400).json({
         success: false,
         errorType: "server",
+        message: "Internal Server Error!",
+      });
+    }
+  });
+};
+
+export const createBrand = async (req: Request, res: Response) => {
+  upload.single("brandImage")(req, res, async function (err) {
+    try {
+      if (err) {
+        if (err instanceof multer.MulterError) {
+          if (err.code === "LIMIT_FILE_SIZE") {
+            return res.status(400).json({
+              success: false,
+              errorType: "LIMIT_FILE_SIZE",
+              message: "File is too large. Max 5MB allowed.",
+            });
+          } else {
+            return res.status(400).json({
+              success: false,
+              errorType: "multer",
+              message: err.message,
+            });
+          }
+        }
+        return res.status(400).json({
+          success: false,
+          errorType: "multer",
+          message: err.message,
+        });
+      }
+
+      const validate = brandValidate.safeParse({
+        brandName: req.body.brandName,
+        brandImage: req.file,
+      });
+
+      if (!validate.success) {
+        if (req.file) {
+          await fs.unlink(req.file?.path);
+        }
+        return res.status(400).json({
+          success: false,
+          errorType: "dtos",
+          message: validate.error.flatten().fieldErrors,
+        });
+      }
+      const data = validate.data as BrandDto;
+      const slugValue = slug(data.brandName);
+      const existSlug = await BrandModel.findOne({ slug: slugValue });
+      if (existSlug) {
+        if (req.file) {
+          await fs.unlink(req.file?.path);
+        }
+        return res.status(400).json({
+          success: false,
+          errorType: "slug",
+          message: "PLease Provide Unique Brand Name!",
+        });
+      }
+      const filePath = req.file ? `images/${req.file.filename}` : null;
+      const createBrand = await BrandModel.create({
+        brandName: data.brandName,
+        slug: slugValue,
+        brandImage: filePath,
+      });
+      if (!createBrand) {
+        res.status(400).json({
+          success: false,
+          errorType: "notCreate",
+          message: "Something Went Wrong Brand Not Created!",
+        });
+      }
+      res.status(400).json({
+        success: true,
+        message: "Brand Created Successfully!",
+      });
+    } catch (err) {
+      console.log(err);
+
+      return res.status(400).json({
+        success: false,
+        errorType: "multer",
         message: "Internal Server Error!",
       });
     }

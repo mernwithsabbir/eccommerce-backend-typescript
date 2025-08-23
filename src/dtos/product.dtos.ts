@@ -9,3 +9,13 @@ export const categoryValidate = z.object({
 });
 
 export type CategoryDto = z.infer<typeof categoryValidate>;
+
+export const brandValidate = z.object({
+  brandName: z.string().min(1, "Brand Name Is Required"),
+  brandImage: z.custom<Express.Multer.File>(
+    (file) => file !== undefined,
+    "Brand Image Is Required."
+  ),
+});
+
+export type BrandDto = z.infer<typeof brandValidate>;

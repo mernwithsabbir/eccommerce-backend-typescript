@@ -17,16 +17,14 @@ const fileFilter = (
   file: Express.Multer.File,
   cb: FileFilterCallback
 ) => {
-  const allowFileTypes = /jpeg|jpg|png|webp/;
-  const ext = allowFileTypes.test(
-    path.extname(file.originalname).toLowerCase()
-  );
-  const mimeType = allowFileTypes.test(file.mimetype);
+  const fileExt = /jpeg|jpg|png|webp/;
+  const ext = fileExt.test(path.extname(file.originalname).toLowerCase());
+  const mimeType = fileExt.test(file.mimetype);
 
   if (ext && mimeType) {
     cb(null, true);
   } else {
-    cb(new Error("Only Allow jpeg|jpg|png|webp formate"));
+    cb(new Error("Only jpeg|jpg|png|webp File Format Allowed!"));
   }
 };
 
