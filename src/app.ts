@@ -4,10 +4,12 @@ import hpp from "hpp";
 import cors from "cors";
 import rateLimit from "express-rate-limit";
 import cookieParser from "cookie-parser";
+import path from "path";
 import apiRouter from "./routes/api";
 import { errorHandler, notFound } from "./middlewares/GlobalErrorHandler";
 const app = express();
 
+app.use(express.static(path.join(__dirname, "../public")));
 app.use(helmet());
 app.use(hpp());
 app.use(cors());
