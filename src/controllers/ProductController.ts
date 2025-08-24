@@ -1,5 +1,4 @@
 import { Request, Response } from "express";
-import fs from "fs/promises";
 import {
   BrandDto,
   brandValidate,
@@ -11,10 +10,11 @@ import {
 import slug from "slug";
 import CategoryModel from "../models/CategoryModel";
 import multer from "multer";
-import { upload } from "../middlewares/uploadMiddleware";
+import { upload, uploadProductImages } from "../middlewares/uploadMiddleware";
 import path from "path";
 import BrandModel from "../models/BrandModel";
 import ProductModel from "../models/ProductModel";
+import { safeUnlink } from "../utils/unlink";
 export const createCategory = async (req: Request, res: Response) => {
   upload.single("categoryImage")(req, res, async function (err) {
     try {
@@ -40,7 +40,7 @@ export const createCategory = async (req: Request, res: Response) => {
       });
       if (!validate.success) {
         if (req.file) {
-          await fs.unlink(req.file?.path);
+          await await safeUnlink(req.file?.path);
         }
         return res.status(400).json({
           success: false,
@@ -55,7 +55,7 @@ export const createCategory = async (req: Request, res: Response) => {
       const existSlug = await CategoryModel.findOne({ slug: slugValue });
       if (existSlug) {
         if (req.file) {
-          await fs.unlink(req.file?.path);
+          await await safeUnlink(req.file?.path);
         }
         return res.status(400).json({
           success: false,
@@ -119,7 +119,7 @@ export const createBrand = async (req: Request, res: Response) => {
 
       if (!validate.success) {
         if (req.file) {
-          await fs.unlink(req.file?.path);
+          await await safeUnlink(req.file?.path);
         }
         return res.status(400).json({
           success: false,
@@ -132,7 +132,7 @@ export const createBrand = async (req: Request, res: Response) => {
       const existSlug = await BrandModel.findOne({ slug: slugValue });
       if (existSlug) {
         if (req.file) {
-          await fs.unlink(req.file?.path);
+          await await safeUnlink(req.file?.path);
         }
         return res.status(400).json({
           success: false,
@@ -170,7 +170,7 @@ export const createBrand = async (req: Request, res: Response) => {
 };
 
 export const createProduct = async (req: Request, res: Response) => {
-  upload.single("image")(req, res, async function (err) {
+  uploadProductImages(req, res, async function (err) {
     if (err) {
       if (err instanceof multer.MulterError) {
         if (err.code === "LIMIT_FILE_SIZE") {
@@ -194,22 +194,39 @@ export const createProduct = async (req: Request, res: Response) => {
       });
     }
     try {
+      const files = req.files as {
+        [fieldname: string]: Express.Multer.File[];
+      };
+
+      const image = files?.["image"]?.[0];
+      const gallery = files?.["gallery"] || [];
       const validate = productValidate.safeParse({
         title: req.body.title,
         shortDesc: req.body.shortDesc,
         price: req.body.price,
         discount: Boolean(req.body.discount),
         discountPrice: req.body.discountPrice,
-        image: req.file,
+        image: image,
         star: Number(req.body.star),
         stock: req.body.stock,
         remark: req.body.remark,
         categoryId: req.body.categoryId,
         brandId: req.body.brandId,
+        details: {
+          description: req.body.description,
+          colors: req.body.colors ? JSON.parse(req.body.colors) : [],
+          sizes: req.body.sizes ? JSON.parse(req.body.sizes) : [],
+          images: gallery,
+        },
       });
       if (!validate.success) {
-        if (req.file) {
-          fs.unlink(req.file?.path);
+        if (image) {
+          await safeUnlink(image?.path);
+        }
+        if (gallery.length > 0) {
+          for (const img of gallery) {
+            await safeUnlink(img.path);
+          }
         }
         return res.status(400).json({
           success: false,
@@ -223,8 +240,13 @@ export const createProduct = async (req: Request, res: Response) => {
       const existSlug = await ProductModel.findOne({ slug: slugValue });
 
       if (existSlug) {
-        if (req.file) {
-          fs.unlink(req.file?.path);
+        if (image) {
+          await safeUnlink(image.path);
+        }
+        if (gallery.length > 0) {
+          for (const img of gallery) {
+            await safeUnlink(img.path);
+          }
         }
         return res.status(400).json({
           success: false,
@@ -232,7 +254,8 @@ export const createProduct = async (req: Request, res: Response) => {
           message: "Please Provide Unique Product Title",
         });
       }
-      const filePath = req.file ? `images/${req.file.filename}` : null;
+      const imagePath = image ? `images/${image.filename}` : null;
+      const galleryPaths = gallery.map((img) => `images/${img.filename}`);
       const createProduct = await ProductModel.create({
         title: data.title,
         slug: slugValue,
@@ -240,17 +263,30 @@ export const createProduct = async (req: Request, res: Response) => {
         price: data.price,
         discount: Boolean(data.discount),
         discountPrice: data.discountPrice,
-        image: filePath,
+        image: imagePath,
         star: Number(data.star),
         stock: data.stock,
         remark: data.remark,
         categoryId: data.categoryId,
         brandId: data.brandId,
+        details: {
+          description: data.details?.description,
+          colors: data.details?.colors,
+          sizes: data.details?.sizes,
+          gallery: galleryPaths,
+        },
       });
       if (!createProduct) {
-        if (req.file) {
-          fs.unlink(req.file?.path);
+        if (image) {
+          await safeUnlink(image.path);
         }
+
+        if (gallery.length > 0) {
+          for (const img of gallery) {
+            await safeUnlink(img.path);
+          }
+        }
+
         return res.status(400).json({
           success: false,
           errorType: "create",

@@ -1,4 +1,10 @@
 import { Model, model, Schema, Types } from "mongoose";
+export interface IProductDetails {
+  description?: string;
+  colors?: string[];
+  sizes?: string[];
+  gallery?: string[]; // multiple gallery array
+}
 
 export interface IProductInterface extends Document {
   title: string;
@@ -13,6 +19,7 @@ export interface IProductInterface extends Document {
   remark: string;
   categoryId: Types.ObjectId;
   brandId: Types.ObjectId;
+  details: IProductDetails;
 }
 
 const ProductSchema = new Schema<IProductInterface>(
@@ -29,6 +36,12 @@ const ProductSchema = new Schema<IProductInterface>(
     remark: { type: String, required: true },
     categoryId: { type: Schema.Types.ObjectId, required: true },
     brandId: { type: Schema.Types.ObjectId, required: true },
+    details: {
+      description: String,
+      colors: [{ type: String }],
+      sizes: [{ type: String }],
+      gallery: [{ type: String }],
+    },
   },
   {
     timestamps: true,
