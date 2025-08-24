@@ -44,7 +44,7 @@ export const createCategory = async (req: Request, res: Response) => {
         }
         return res.status(400).json({
           success: false,
-          errorType: "dtos",
+          errorType: "dto",
           message: validate.error.flatten().fieldErrors,
         });
       }
@@ -123,7 +123,7 @@ export const createBrand = async (req: Request, res: Response) => {
         }
         return res.status(400).json({
           success: false,
-          errorType: "dtos",
+          errorType: "dto",
           message: validate.error.flatten().fieldErrors,
         });
       }
