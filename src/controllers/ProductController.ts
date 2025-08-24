@@ -170,7 +170,29 @@ export const createBrand = async (req: Request, res: Response) => {
 };
 
 export const createProduct = async (req: Request, res: Response) => {
-  upload.single("image")(req, res, async function () {
+  upload.single("image")(req, res, async function (err) {
+    if (err) {
+      if (err instanceof multer.MulterError) {
+        if (err.code === "LIMIT_FILE_SIZE") {
+          return res.status(400).json({
+            success: false,
+            errorType: "LIMIT_FILE_SIZE",
+            message: "Maximum File Size 5mb Or Less!",
+          });
+        } else {
+          return res.status(400).json({
+            success: false,
+            errorType: "multer",
+            message: err.message,
+          });
+        }
+      }
+      return res.status(400).json({
+        success: false,
+        errorType: "multer",
+        message: err.message,
+      });
+    }
     try {
       const validate = productValidate.safeParse({
         title: req.body.title,
