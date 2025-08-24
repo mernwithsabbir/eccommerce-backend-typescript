@@ -3,6 +3,8 @@ import bcrypt from "bcrypt";
 import {
   LoginDto,
   loginValidate,
+  ProfileDto,
+  profileValidate,
   RegisterDto,
   registerValidate,
 } from "../dtos/auth.dtos";
@@ -20,6 +22,7 @@ import TokenModel, {
 } from "../models/RefreshTokenModel";
 import { clearAuthCookie, setAuthCookies } from "../utils/cookie";
 import { tokenDataInterface } from "../types/token";
+import UserProfile from "../models/UserProfileModel";
 
 export const registerUser = async (req: Request, res: Response) => {
   try {
@@ -27,7 +30,7 @@ export const registerUser = async (req: Request, res: Response) => {
     if (!validate.success) {
       res.status(400).json({
         success: false,
-        errorType: "dtos",
+        errorType: "dto",
         message: validate.error.flatten().fieldErrors,
       });
     }
@@ -84,7 +87,7 @@ export const loginUser = async (req: Request, res: Response) => {
     if (!validate.success) {
       res.status(400).json({
         success: false,
-        errorType: "dtos",
+        errorType: "dto",
         message: validate.error.flatten().fieldErrors,
       });
     }
@@ -252,6 +255,84 @@ export const me = async (req: Request, res: Response) => {
       success: true,
       message: "Successfully Get User Data!",
       data: existUser,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      errorType: "server",
+      message: error,
+    });
+  }
+};
+
+export const createUserProfile = async (req: Request, res: Response) => {
+  try {
+    const validate = profileValidate.safeParse({
+      userId: req.user?.userId,
+      cus_add: req.body.cus_add,
+      cus_city: req.body.cus_city,
+      cus_country: req.body.cus_country,
+      cus_fax: req.body.cus_fax,
+      cus_name: req.body.cus_name,
+      cus_phone: req.body.cus_phone,
+      cus_postcode: req.body.cus_postcode,
+      cus_state: req.body.cus_state,
+      ship_add: req.body.ship_add,
+      ship_city: req.body.ship_city,
+      ship_country: req.body.ship_country,
+      ship_fax: req.body.ship_fax,
+      ship_name: req.body.ship_name,
+      ship_phone: req.body.ship_phone,
+      ship_postcode: req.body.ship_postcode,
+    });
+
+    if (!validate.success) {
+      res.status(400).json({
+        success: false,
+        errorType: "dto",
+        message: validate.error.flatten().fieldErrors,
+      });
+    }
+    const data = validate.data as ProfileDto;
+    const existProfile = await UserProfile.findOne({
+      userId: req.user?.userId,
+    });
+    if (existProfile) {
+      res.status(400).json({
+        success: false,
+        errorType: "exist",
+        message: "User Profile Already Exist!",
+      });
+    }
+
+    const createProfile = await UserProfile.create({
+      userId: req.user?.userId,
+      cus_add: data.cus_add,
+      cus_city: data.cus_city,
+      cus_country: data.cus_country,
+      cus_fax: data.cus_fax,
+      cus_name: data.cus_name,
+      cus_phone: data.cus_phone,
+      cus_postcode: data.cus_postcode,
+      cus_state: data.cus_state,
+      ship_add: data.ship_add,
+      ship_city: data.ship_city,
+      ship_country: data.ship_country,
+      ship_fax: data.ship_fax,
+      ship_name: data.ship_name,
+      ship_phone: data.ship_phone,
+      ship_postcode: data.ship_postcode,
+    });
+    if (!createProfile) {
+      res.status(400).json({
+        success: false,
+        errorType: "createProfile",
+        message: "Something Went Wrong Profile Not Created!",
+      });
+    }
+    res.status(400).json({
+      success: true,
+      message: "User Profile Created Successfully!",
     });
   } catch (error) {
     res.status(500).json({

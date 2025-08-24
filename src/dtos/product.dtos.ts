@@ -1,5 +1,5 @@
 import * as z from "zod";
-const objectIdSchema = z
+export const objectIdSchema = z
   .string()
   .regex(/^[0-9a-fA-F]{24}$/, "Invalid ID format");
 export const categoryValidate = z.object({

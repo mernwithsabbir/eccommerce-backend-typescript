@@ -1,5 +1,6 @@
 import express from "express";
 import {
+  createUserProfile,
   loginUser,
   me,
   refreshToken,
@@ -13,5 +14,6 @@ authRouter.post("/register", registerUser);
 authRouter.post("/login", loginUser);
 authRouter.post("/refresh", refreshToken);
 authRouter.get("/me", Authenticated, me);
+authRouter.post("/addProfile", Authenticated, createUserProfile);
 
 export default authRouter;

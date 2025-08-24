@@ -18,8 +18,6 @@ export interface IUserProfile extends Document {
   ship_phone?: string;
   ship_postcode?: string;
   ship_state?: string;
-  createdAt?: Date;
-  updatedAt?: Date;
 }
 
 const UserProfileSchema: Schema<IUserProfile> = new Schema(
