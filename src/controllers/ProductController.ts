@@ -5,6 +5,8 @@ import {
   brandValidate,
   CategoryDto,
   categoryValidate,
+  ProductDto,
+  productValidate,
 } from "../dtos/product.dtos";
 import slug from "slug";
 import CategoryModel from "../models/CategoryModel";
@@ -12,6 +14,7 @@ import multer from "multer";
 import { upload } from "../middlewares/uploadMiddleware";
 import path from "path";
 import BrandModel from "../models/BrandModel";
+import ProductModel from "../models/ProductModel";
 export const createCategory = async (req: Request, res: Response) => {
   upload.single("categoryImage")(req, res, async function (err) {
     try {
@@ -167,16 +170,81 @@ export const createBrand = async (req: Request, res: Response) => {
 };
 
 export const createProduct = async (req: Request, res: Response) => {
-  try {
-    res.status(200).json({
-      success: true,
-      message: "Create Product Router Is Working",
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      errorType: "server",
-      message: error,
-    });
-  }
+  upload.single("image")(req, res, async function () {
+    try {
+      const validate = productValidate.safeParse({
+        title: req.body.title,
+        shortDesc: req.body.shortDesc,
+        price: req.body.price,
+        discount: Boolean(req.body.discount),
+        discountPrice: req.body.discountPrice,
+        image: req.file,
+        star: Number(req.body.star),
+        stock: req.body.stock,
+        remark: req.body.remark,
+        categoryId: req.body.categoryId,
+        brandId: req.body.brandId,
+      });
+      if (!validate.success) {
+        if (req.file) {
+          fs.unlink(req.file?.path);
+        }
+        return res.status(400).json({
+          success: false,
+          errorType: "dto",
+          message: validate.error.flatten().fieldErrors,
+        });
+      }
+
+      const data = validate.data as ProductDto;
+      const slugValue = slug(data.title);
+      const existSlug = await ProductModel.findOne({ slug: slugValue });
+
+      if (existSlug) {
+        if (req.file) {
+          fs.unlink(req.file?.path);
+        }
+        return res.status(400).json({
+          success: false,
+          errorType: "existSlug",
+          message: "Please Provide Unique Product Title",
+        });
+      }
+      const filePath = req.file ? `images/${req.file.filename}` : null;
+      const createProduct = await ProductModel.create({
+        title: data.title,
+        slug: slugValue,
+        shortDesc: data.shortDesc,
+        price: data.price,
+        discount: Boolean(data.discount),
+        discountPrice: data.discountPrice,
+        image: filePath,
+        star: Number(data.star),
+        stock: data.stock,
+        remark: data.remark,
+        categoryId: data.categoryId,
+        brandId: data.brandId,
+      });
+      if (!createProduct) {
+        if (req.file) {
+          fs.unlink(req.file?.path);
+        }
+        return res.status(400).json({
+          success: false,
+          errorType: "create",
+          message: "Something Went Wrong.Product Not Created!",
+        });
+      }
+      res.status(200).json({
+        success: true,
+        message: "Create Product Successfully",
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        errorType: "server",
+        message: error,
+      });
+    }
+  });
 };
