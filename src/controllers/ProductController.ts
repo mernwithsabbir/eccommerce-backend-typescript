@@ -15,6 +15,7 @@ import path from "path";
 import BrandModel from "../models/BrandModel";
 import ProductModel from "../models/ProductModel";
 import { safeUnlink } from "../utils/unlink";
+import { Types } from "mongoose";
 export const createCategory = async (req: Request, res: Response) => {
   upload.single("categoryImage")(req, res, async function (err) {
     try {
@@ -305,4 +306,203 @@ export const createProduct = async (req: Request, res: Response) => {
       });
     }
   });
+};
+export const deleteProduct = async (req: Request, res: Response) => {
+  try {
+    const productId = new Types.ObjectId(req.params.productId);
+    await ProductModel.deleteOne({ _id: productId });
+    res.status(400).json({
+      success: true,
+      message: "Product Deleted Successfully!",
+    });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Something Went Wrong";
+    return res.status(400).json({
+      success: false,
+      errorType: "server",
+      message: message,
+    });
+  }
+};
+
+// Read All Category|Brand|Product data
+
+export const readCategory = async (req: Request, res: Response) => {
+  try {
+    const data = await CategoryModel.find();
+
+    res.status(200).json({
+      success: true,
+      message: "Category Fetch Successfully",
+      data: data,
+    });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Something Went Wrong";
+    return res.status(400).json({
+      success: false,
+      errorType: "server",
+      message: message,
+    });
+  }
+};
+export const readBrand = async (req: Request, res: Response) => {
+  try {
+    const data = await BrandModel.find();
+
+    res.status(200).json({
+      success: true,
+      message: "Brand Fetch Successfully",
+      data: data,
+    });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Something Went Wrong";
+    return res.status(400).json({
+      success: false,
+      errorType: "server",
+      message: message,
+    });
+  }
+};
+export const readOnlyProduct = async (req: Request, res: Response) => {
+  try {
+    const data = await ProductModel.aggregate([{ $project: { details: 0 } }]);
+
+    res.status(200).json({
+      success: true,
+      message: "Product Fetch Successfully",
+      data: data,
+    });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Something Went Wrong";
+    return res.status(400).json({
+      success: false,
+      errorType: "server",
+      message: message,
+    });
+  }
+};
+
+export const readProductDetails = async (req: Request, res: Response) => {
+  try {
+    const slug = req.params.slug;
+    const data = await ProductModel.find({ slug: slug });
+    console.log(slug);
+
+    res.status(200).json({
+      success: true,
+      message: "Product Details Fetch Successfully",
+      data: data,
+    });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Something Went Wrong";
+    return res.status(400).json({
+      success: false,
+      errorType: "server",
+      message: message,
+    });
+  }
+};
+
+export const readCategoryWithProductList = async (
+  req: Request,
+  res: Response
+) => {
+  try {
+    const categoryId = new Types.ObjectId(req.params.categoryId);
+    const data = await ProductModel.aggregate([
+      { $match: { categoryId: categoryId } },
+      {
+        $lookup: {
+          from: "categories",
+          localField: "categoryId",
+          foreignField: "_id",
+          as: "category",
+        },
+      },
+      {
+        $lookup: {
+          from: "brands",
+          localField: "brandId",
+          foreignField: "_id",
+          as: "brand",
+        },
+      },
+      { $unwind: "$category" },
+      { $unwind: "$brand" },
+    ]);
+
+    res.status(200).json({
+      success: true,
+      message: "Product With Category Fetch Successfully",
+      data: data,
+    });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Something Went Wrong";
+    return res.status(400).json({
+      success: false,
+      errorType: "server",
+      message: message,
+    });
+  }
+};
+export const readBrandWithProductList = async (req: Request, res: Response) => {
+  try {
+    const brandId = new Types.ObjectId(req.params.brandId);
+    const data = await ProductModel.aggregate([
+      { $match: { brandId: brandId } },
+      {
+        $lookup: {
+          from: "categories",
+          localField: "categoryId",
+          foreignField: "_id",
+          as: "category",
+        },
+      },
+      {
+        $lookup: {
+          from: "brands",
+          localField: "brandId",
+          foreignField: "_id",
+          as: "brand",
+        },
+      },
+      { $unwind: "$category" },
+      { $unwind: "$brand" },
+    ]);
+
+    res.status(200).json({
+      success: true,
+      message: "Product With Brand Fetch Successfully",
+      data: data,
+    });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Something Went Wrong";
+    return res.status(400).json({
+      success: false,
+      errorType: "server",
+      message: message,
+    });
+  }
+};
+export const readRemarkWithProductList = async (
+  req: Request,
+  res: Response
+) => {
+  try {
+    const remark = new Types.ObjectId(req.params.remark);
+    const data = await ProductModel.find({ remark: remark });
+
+    res.status(200).json({
+      success: true,
+      message: "Product With Remark Fetch Successfully",
+      data: data,
+    });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Something Went Wrong";
+    return res.status(400).json({
+      success: false,
+      errorType: "server",
+      message: message,
+    });
+  }
 };
